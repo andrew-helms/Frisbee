@@ -1,13 +1,13 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class DiscMovement : MonoBehaviour
 {
     public float LiftCoeff;
-    public float DragCoeff;
+    public float StaticLiftCoeff;
 
     public LayerMask Ground;
+    public LayerMask Goal;
+    public LayerMask Bounds;
 
     private Rigidbody rb;
 
@@ -27,19 +27,29 @@ public class DiscMovement : MonoBehaviour
     void FixedUpdate()
     {
         Vector3 localVel = transform.InverseTransformDirection(rb.velocity);
-        float angle = Mathf.Atan2(-localVel.y, localVel.z);
 
-        float lift = LiftCoeff * Mathf.Sin(angle) * (Mathf.Pow(rb.velocity.x, 2) + Mathf.Pow(rb.velocity.z, 2));
-        float drag = -DragCoeff * Mathf.Sin(angle) * Mathf.Pow(rb.velocity.magnitude, 2);
-        rb.AddForce(Vector3.Cross(rb.velocity, transform.right).normalized * lift);
-        rb.AddForce(rb.velocity.normalized * drag);
+        float lift = (LiftCoeff * -localVel.y + StaticLiftCoeff) * Mathf.Pow(rb.velocity.magnitude, 2);
+        rb.AddForce(transform.up * lift);
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.layer != Ground.value)
+        if ((Ground.value & (1 << collision.transform.gameObject.layer)) == 0)
         {
-            //Destroy(gameObject);
+            Destroy(gameObject);
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if ((Goal.value & (1 << other.transform.gameObject.layer)) != 0)
+        {
+            Destroy(gameObject);
+            Debug.Log("Score");
+        }
+        if ((Bounds.value & (1 << other.transform.gameObject.layer)) != 0)
+        {
+            Destroy(gameObject);
         }
     }
 }

@@ -12,25 +12,32 @@ public class PlayerCam : MonoBehaviour
     private float xRotation;
     private float yRotation;
 
+    private PlayerController script;
+
     // Start is called before the first frame update
     private void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        script = GameObject.Find("Player").GetComponent<PlayerController>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        float mouseX = Input.GetAxisRaw("Mouse X") * Time.deltaTime * XSens;
-        float mouseY = Input.GetAxisRaw("Mouse Y") * Time.deltaTime * YSens;
+        if (!script.AimLock)
+        {
+            float mouseX = Input.GetAxisRaw("Mouse X") * Time.deltaTime * XSens;
+            float mouseY = Input.GetAxisRaw("Mouse Y") * Time.deltaTime * YSens;
 
-        xRotation += mouseX;
-        yRotation -= mouseY;
+            yRotation += mouseX;
+            xRotation -= mouseY;
 
-        xRotation = Mathf.Clamp(xRotation, -90, 90);
+            xRotation = Mathf.Clamp(xRotation, -90, 90);
 
-        transform.rotation = Quaternion.Euler(xRotation, yRotation, 0f);
-        Orientation.rotation = Quaternion.Euler(0, yRotation, 0f);
+            transform.rotation = Quaternion.Euler(xRotation, yRotation, 0f);
+            Orientation.rotation = Quaternion.Euler(0, yRotation, 0f);
+        }
     }
 }

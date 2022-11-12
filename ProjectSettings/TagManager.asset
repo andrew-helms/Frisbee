@@ -25,6 +25,7 @@ TagManager:
   - 
   - 
   - 
+  - Goal
   - 
   - 
   - 
@@ -35,8 +36,7 @@ TagManager:
   - 
   - 
   - 
-  - 
-  - 
+  - Bounds
   m_SortingLayers:
   - name: Default
     uniqueID: 0

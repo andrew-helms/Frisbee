@@ -6,28 +6,24 @@ public class AngleController : MonoBehaviour
 {
     public float TurnRate;
 
-    private float zRotation;
+    public Transform VerticalLine;
+    public Transform HorizontalLine;
+
+    private PlayerController script;
+
     // Start is called before the first frame update
     void Start()
     {
-        
+        script = GameObject.Find("Player").GetComponent<PlayerController>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        Vector3 rotation = transform.rotation.eulerAngles;
-        if (Input.GetKey(KeyCode.Q))
-        {
-            zRotation += TurnRate * Time.deltaTime;
-        }
-        if (Input.GetKey(KeyCode.E))
-        {
-            zRotation -= TurnRate * Time.deltaTime;
-        }
+        Vector3 horizontal = new Vector3(1, 1, script.BankAngle.x * 0.25f);
+        Vector3 vertical = new Vector3(1, 1, script.BankAngle.y * 0.5f);
 
-        rotation.z = Mathf.Clamp(zRotation, -90, 90);
-
-        transform.rotation = Quaternion.Euler(rotation);
+        HorizontalLine.localScale = horizontal;
+        VerticalLine.localScale = vertical;
     }
 }
