@@ -1,13 +1,16 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class DiscMovement : MonoBehaviour
 {
-    public float LiftCoeff;
-    public float StaticLiftCoeff;
+    [SerializeField] private float LiftCoeff;
+    [SerializeField] private float StaticLiftCoeff;
 
-    public LayerMask Ground;
-    public LayerMask Goal;
-    public LayerMask Bounds;
+    [SerializeField] private LayerMask Ground;
+    [SerializeField] private LayerMask Goal;
+    [SerializeField] private LayerMask Bounds;
+
+    [SerializeField] private ThrowManager throwManager;
 
     private Rigidbody rb;
 
@@ -32,20 +35,13 @@ public class DiscMovement : MonoBehaviour
         rb.AddForce(transform.up * lift);
     }
 
-    private void OnCollisionEnter(Collision collision)
-    {
-        if ((Ground.value & (1 << collision.transform.gameObject.layer)) == 0)
-        {
-            Destroy(gameObject);
-        }
-    }
-
     private void OnTriggerEnter(Collider other)
     {
         if ((Goal.value & (1 << other.transform.gameObject.layer)) != 0)
         {
             Destroy(gameObject);
-            Debug.Log("Score");
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex, LoadSceneMode.Single);
+            throwManager.Reset();
         }
         if ((Bounds.value & (1 << other.transform.gameObject.layer)) != 0)
         {

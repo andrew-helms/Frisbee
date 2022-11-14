@@ -7,26 +7,24 @@ public class PlayerCam : MonoBehaviour
     public float XSens;
     public float YSens;
 
-    public Transform Orientation;
+    [SerializeField] private Transform Orientation;
+
+    [SerializeField] private ThrowManager throwManager;
 
     private float xRotation;
     private float yRotation;
-
-    private PlayerController script;
 
     // Start is called before the first frame update
     private void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-
-        script = GameObject.Find("Player").GetComponent<PlayerController>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (!script.AimLock)
+        if (!throwManager.AimLock)
         {
             float mouseX = Input.GetAxisRaw("Mouse X") * Time.deltaTime * XSens;
             float mouseY = Input.GetAxisRaw("Mouse Y") * Time.deltaTime * YSens;

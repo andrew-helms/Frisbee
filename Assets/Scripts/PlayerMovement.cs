@@ -2,28 +2,31 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerController : MonoBehaviour
+public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement")]
-    public float WalkSpeed;
-    public float SprintSpeed;
-    public float CrouchSpeed;
+    [SerializeField] private float WalkSpeed;
+    [SerializeField] private float SprintSpeed;
+    [SerializeField] private float CrouchSpeed;
 
-    public float GroundDrag;
-    public float SlideDrag;
+    [SerializeField] private float GroundDrag;
+    [SerializeField] private float SlideDrag;
 
-    public float JumpForce;
-    public float JumpCooldown;
-    public float AirMulitiplier;
+    [SerializeField] private float JumpForce;
+    [SerializeField] private float JumpCooldown;
+    [SerializeField] private float AirMulitiplier;
 
-    public Transform Orientation;
+    [SerializeField] private Transform Orientation;
 
-    public float PlayerHeight;
-    public LayerMask Ground;
+    [SerializeField] private float PlayerHeight;
+    [SerializeField] private float PlayerWidth;
+    [SerializeField] private LayerMask Ground;
 
-    public KeyCode JumpKey = KeyCode.Space;
-    public KeyCode SprintKey = KeyCode.LeftShift;
-    public KeyCode CrouchKey = KeyCode.LeftControl;
+    [SerializeField] private KeyCode JumpKey = KeyCode.Space;
+    [SerializeField] private KeyCode SprintKey = KeyCode.LeftShift;
+    [SerializeField] private KeyCode CrouchKey = KeyCode.LeftControl;
+
+    [SerializeField] private ThrowManager throwManager;
 
     private float horizontalInput;
     private float verticalInput;
@@ -31,6 +34,7 @@ public class PlayerController : MonoBehaviour
     private Rigidbody rb;
 
     private bool grounded;
+    private bool onWall;
 
     private bool canJump;
     private int jumpCount = 2;
@@ -47,24 +51,9 @@ public class PlayerController : MonoBehaviour
         Sliding
     }
 
-    [Header("Disc")]
-    public GameObject projectile;
-    public float ThrowForce;
-    public float ThrowCooldown;
-    public float SpinForce;
-
-    public Vector3 BankAngle;
-
-    public Transform CamOrientation;
-
-    public bool AimLock;
-
-    public PlayerCam cam;
-
     // Start is called before the first frame update
     void Start()
     {
-        AimLock = false;
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
     }
@@ -74,14 +63,23 @@ public class PlayerController : MonoBehaviour
     {
         grounded = Physics.Raycast(transform.position, Vector3.down, PlayerHeight * 0.5f + 0.1f, Ground);
 
+        if (!grounded)
+        {
+            onWall = Physics.Raycast(transform.position, Orientation.transform.right, PlayerWidth * 0.5f + 0.1f, Ground);
+            if (!onWall)
+            {
+                onWall = Physics.Raycast(transform.position, -Orientation.transform.right, PlayerWidth * 0.5f + 0.1f, Ground);
+            }
+        }
+
         MyInput();
         SpeedControl();
 
-        if (grounded)
+        if (grounded || onWall)
         {
             jumpCount = 2;
 
-            if (moveState == MovementState.Sliding)
+            if ((moveState == MovementState.Sliding || onWall) && !throwManager.HoldingDisc)
             {
                 rb.drag = SlideDrag;
             }
@@ -94,18 +92,6 @@ public class PlayerController : MonoBehaviour
         {
             rb.drag = 0;
         }
-        
-        if (AimLock)
-        {
-            float mouseX = Input.GetAxisRaw("Mouse X") * Time.deltaTime * cam.XSens;
-            float mouseY = Input.GetAxisRaw("Mouse Y") * Time.deltaTime * cam.YSens;
-
-            BankAngle.x += mouseX * .01f;
-            BankAngle.y += mouseY * .01f;
-
-            BankAngle.x = Mathf.Clamp(BankAngle.x, -1, 1);
-            BankAngle.y = Mathf.Clamp(BankAngle.y, -0.5f, 0.5f);
-        }
     }
 
     private void FixedUpdate()
@@ -113,22 +99,12 @@ public class PlayerController : MonoBehaviour
         MovePlayer();
     }
 
-    private void Throw()
-    {
-        Vector3 rotation = CamOrientation.rotation.eulerAngles;
-        rotation.z -= BankAngle.x * 90; //bank = horizontal mouse
-        rotation.x += BankAngle.y * 90; //pitch = vertical mouse
-        Rigidbody disc = Instantiate(projectile, transform.position + CamOrientation.forward * 1.5f, Quaternion.Euler(rotation)).GetComponent<Rigidbody>();
-        disc.AddForce(CamOrientation.forward * ThrowForce, ForceMode.Impulse);
-        disc.AddTorque(disc.transform.up * SpinForce, ForceMode.Impulse);
-    }
-
     private void MyInput()
     {
         horizontalInput = Input.GetAxisRaw("Horizontal");
         verticalInput = Input.GetAxisRaw("Vertical");
 
-        if (Input.GetKey(JumpKey) && canJump && jumpCount > 0)
+        if (Input.GetKey(JumpKey) && canJump && jumpCount > 0 && !throwManager.HoldingDisc)
         {
             canJump = false;
             jumpCount--;
@@ -136,7 +112,7 @@ public class PlayerController : MonoBehaviour
             Jump();
         }
 
-        if (grounded)
+        if (grounded || onWall)
         {
             moveSpeed = WalkSpeed;
             moveState = MovementState.Walking;
@@ -172,28 +148,17 @@ public class PlayerController : MonoBehaviour
         {
             Invoke(nameof(ResetJump), JumpCooldown);
         }
-
-        if (Input.GetKeyDown(KeyCode.Mouse0))
-        {
-            AimLock = true;
-        }
-        if (Input.GetKeyUp(KeyCode.Mouse0))
-        {
-            AimLock = false;
-            Throw();
-            BankAngle.Set(0, 0, 0);
-        }
     }
 
     private void MovePlayer()
     {
-        if (moveState == MovementState.Sliding)
+        if (moveState == MovementState.Sliding || throwManager.HoldingDisc)
         {
             return;
         }
 
-        Vector3 moveForce = (Orientation.forward * verticalInput + Orientation.right * horizontalInput) * moveSpeed * 10f;
-        if (grounded)
+        Vector3 moveForce = (Orientation.forward * verticalInput + Orientation.right * horizontalInput) * moveSpeed * 5f;
+        if (grounded || onWall)
         {
             rb.AddForce(moveForce, ForceMode.Force);
         }
@@ -223,5 +188,15 @@ public class PlayerController : MonoBehaviour
     private void ResetJump()
     {
         canJump = true;
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.name == "Disc(Clone)")
+        {
+            Destroy(collision.gameObject);
+            throwManager.PickUpDisc();
+        }
+        Debug.Log(collision.gameObject.name);
     }
 }

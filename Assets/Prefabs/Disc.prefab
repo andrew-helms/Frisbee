@@ -109,6 +109,7 @@ MonoBehaviour:
   Bounds:
     serializedVersion: 2
     m_Bits: 2147483648
+  throwManager: {fileID: 11400000, guid: c43f91e07a261de498a37a80f5dbe53f, type: 2}
 --- !u!54 &-2666548071226173483
 Rigidbody:
   m_ObjectHideFlags: 0
