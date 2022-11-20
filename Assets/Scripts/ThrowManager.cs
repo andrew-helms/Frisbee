@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "Data", menuName = "ScriptableObjects/ThrowManagerScriptableObject", order = 1)]
+[CreateAssetMenu(fileName = "ThrowManager", menuName = "ScriptableObjects/ThrowManagerScriptableObject", order = 1)]
 public class ThrowManager : ScriptableObject
 {
     public bool AimLock { get; private set; }

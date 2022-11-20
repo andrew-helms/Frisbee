@@ -5,9 +5,13 @@ using UnityEngine;
 public class PlayerThrow : MonoBehaviour
 {
     [SerializeField] private GameObject projectile;
-    [SerializeField] private float ThrowForce;
-    [SerializeField] private float ThrowCooldown;
-    [SerializeField] private float SpinForce;
+    [SerializeField] private float throwForce;
+    [SerializeField] private float throwCooldown;
+    [SerializeField] private float spinForce;
+
+    [SerializeField] private float catchRadius = 0.25f;
+    [SerializeField] private float catchDist = 2;
+    [SerializeField] private LayerMask discLayer;
 
     [SerializeField] private Transform camOrientation;
 
@@ -23,7 +27,7 @@ public class PlayerThrow : MonoBehaviour
 
     // Update is called once per frame
     void Update()
-    {
+    { 
         MyInput();
         
         if (throwManager.AimLock)
@@ -45,8 +49,8 @@ public class PlayerThrow : MonoBehaviour
         rotation.z -= throwManager.BankAngle.x * 90; //bank = horizontal mouse
         rotation.x += throwManager.BankAngle.y * 90; //pitch = vertical mouse
         Rigidbody disc = Instantiate(projectile, transform.position + camOrientation.forward * 1.5f, Quaternion.Euler(rotation)).GetComponent<Rigidbody>();
-        disc.AddForce(camOrientation.forward * ThrowForce, ForceMode.Impulse);
-        disc.AddTorque(disc.transform.up * SpinForce, ForceMode.Impulse);
+        disc.AddForce(camOrientation.forward * throwForce, ForceMode.Impulse);
+        disc.AddTorque(disc.transform.up * spinForce, ForceMode.Impulse);
     }
 
     private void MyInput()
@@ -60,6 +64,11 @@ public class PlayerThrow : MonoBehaviour
             throwManager.EndThrow();
             Throw();
             throwManager.BankAngle.Set(0, 0, 0);
+        }
+        if (Input.GetKeyDown(KeyCode.Mouse1) && !throwManager.HoldingDisc && Physics.SphereCast(cam.transform.position, catchRadius, camOrientation.forward, out RaycastHit info, catchDist, discLayer))
+        {
+            throwManager.PickUpDisc();
+            Destroy(info.collider.gameObject);
         }
     }
 }

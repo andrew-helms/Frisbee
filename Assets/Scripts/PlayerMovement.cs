@@ -5,26 +5,28 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement")]
-    [SerializeField] private float WalkSpeed;
-    [SerializeField] private float SprintSpeed;
-    [SerializeField] private float CrouchSpeed;
+    [SerializeField] private float walkSpeed;
+    [SerializeField] private float sprintSpeed;
+    [SerializeField] private float crouchSpeed;
 
-    [SerializeField] private float GroundDrag;
-    [SerializeField] private float SlideDrag;
+    [SerializeField] private float groundDrag;
+    [SerializeField] private float slideDrag;
 
-    [SerializeField] private float JumpForce;
-    [SerializeField] private float JumpCooldown;
-    [SerializeField] private float AirMulitiplier;
+    [SerializeField] private float jumpForce;
+    [SerializeField] private float jumpCooldown;
+    [SerializeField] private float airMulitiplier;
 
-    [SerializeField] private Transform Orientation;
+    [SerializeField] private Transform orientation;
 
-    [SerializeField] private float PlayerHeight;
-    [SerializeField] private float PlayerWidth;
-    [SerializeField] private LayerMask Ground;
+    [SerializeField] private float playerHeight;
+    [SerializeField] private float playerWidth;
+    [SerializeField] private LayerMask ground;
 
-    [SerializeField] private KeyCode JumpKey = KeyCode.Space;
-    [SerializeField] private KeyCode SprintKey = KeyCode.LeftShift;
-    [SerializeField] private KeyCode CrouchKey = KeyCode.LeftControl;
+    [SerializeField] private KeyCode jumpKey = KeyCode.Space;
+    [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift;
+    [SerializeField] private KeyCode crouchKey = KeyCode.LeftControl;
+
+    [SerializeField] private bool toggleSprint;
 
     [SerializeField] private ThrowManager throwManager;
 
@@ -61,19 +63,24 @@ public class PlayerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        grounded = Physics.Raycast(transform.position, Vector3.down, PlayerHeight * 0.5f + 0.1f, Ground);
+        grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.1f, ground);
 
         if (!grounded)
         {
-            onWall = Physics.Raycast(transform.position, Orientation.transform.right, PlayerWidth * 0.5f + 0.1f, Ground);
+            onWall = Physics.Raycast(transform.position, orientation.transform.right, playerWidth * 0.5f + 0.1f, ground);
             if (!onWall)
             {
-                onWall = Physics.Raycast(transform.position, -Orientation.transform.right, PlayerWidth * 0.5f + 0.1f, Ground);
+                onWall = Physics.Raycast(transform.position, -orientation.transform.right, playerWidth * 0.5f + 0.1f, ground);
             }
         }
 
         MyInput();
         SpeedControl();
+
+        if (onWall && !grounded)
+        {
+            rb.AddForce(transform.up * 1f, ForceMode.Acceleration);
+        }
 
         if (grounded || onWall)
         {
@@ -81,11 +88,11 @@ public class PlayerMovement : MonoBehaviour
 
             if ((moveState == MovementState.Sliding || onWall) && !throwManager.HoldingDisc)
             {
-                rb.drag = SlideDrag;
+                rb.drag = slideDrag;
             }
             else
             {
-                rb.drag = GroundDrag;
+                rb.drag = groundDrag;
             }
         }
         else
@@ -104,7 +111,7 @@ public class PlayerMovement : MonoBehaviour
         horizontalInput = Input.GetAxisRaw("Horizontal");
         verticalInput = Input.GetAxisRaw("Vertical");
 
-        if (Input.GetKey(JumpKey) && canJump && jumpCount > 0 && !throwManager.HoldingDisc)
+        if (Input.GetKey(jumpKey) && canJump && jumpCount > 0 && !throwManager.HoldingDisc)
         {
             canJump = false;
             jumpCount--;
@@ -114,23 +121,40 @@ public class PlayerMovement : MonoBehaviour
 
         if (grounded || onWall)
         {
-            moveSpeed = WalkSpeed;
-            moveState = MovementState.Walking;
-
-            if (Input.GetKey(SprintKey))
+            if (!toggleSprint)
             {
-                moveSpeed = SprintSpeed;
-                moveState = MovementState.Sprinting;
+                moveSpeed = walkSpeed;
+                moveState = MovementState.Walking;
             }
 
-            if (Input.GetKey(CrouchKey))
+            if (Input.GetKeyDown(sprintKey))
             {
-                moveSpeed = CrouchSpeed;
+                if (moveState == MovementState.Sprinting || !toggleSprint)
+                {
+                    moveSpeed = walkSpeed;
+                    moveState = MovementState.Walking;
+                }
+                else
+                {
+                    moveSpeed = sprintSpeed;
+                    moveState = MovementState.Sprinting;
+                }
+            }
+
+            if (toggleSprint && rb.velocity.magnitude < crouchSpeed)
+            {
+                moveSpeed = walkSpeed;
+                moveState = MovementState.Walking;
+            }
+
+            if (Input.GetKey(crouchKey))
+            {
+                moveSpeed = crouchSpeed;
                 moveState = MovementState.Crouching;
 
-                if (rb.velocity.magnitude > CrouchSpeed)
+                if (rb.velocity.magnitude > crouchSpeed)
                 {
-                    moveSpeed = SprintSpeed;
+                    moveSpeed = sprintSpeed;
                     moveState = MovementState.Sliding;
                 }
             }
@@ -138,7 +162,7 @@ public class PlayerMovement : MonoBehaviour
         else
         {
             //moveSpeed = SprintSpeed;
-            if (Input.GetKey(CrouchKey) && rb.velocity.magnitude > CrouchSpeed + 0.5f)
+            if (Input.GetKey(crouchKey) && rb.velocity.magnitude > crouchSpeed + 0.5f)
             {
                 moveState = MovementState.Sliding;
             }
@@ -146,7 +170,7 @@ public class PlayerMovement : MonoBehaviour
 
         if (!canJump)
         {
-            Invoke(nameof(ResetJump), JumpCooldown);
+            Invoke(nameof(ResetJump), jumpCooldown);
         }
     }
 
@@ -157,14 +181,14 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        Vector3 moveForce = (Orientation.forward * verticalInput + Orientation.right * horizontalInput) * moveSpeed * 5f;
+        Vector3 moveForce = (orientation.forward * verticalInput + orientation.right * horizontalInput) * moveSpeed * 1000f;
         if (grounded || onWall)
         {
             rb.AddForce(moveForce, ForceMode.Force);
         }
         else
         {
-            rb.AddForce(moveForce * AirMulitiplier, ForceMode.Force);
+            rb.AddForce(moveForce * airMulitiplier, ForceMode.Force);
         }
     }
 
@@ -182,7 +206,7 @@ public class PlayerMovement : MonoBehaviour
     {
         rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
 
-        rb.AddForce(transform.up * JumpForce, ForceMode.Impulse);
+        rb.AddForce(transform.up * jumpForce, ForceMode.Impulse);
     }
 
     private void ResetJump()
@@ -190,13 +214,12 @@ public class PlayerMovement : MonoBehaviour
         canJump = true;
     }
 
-    private void OnCollisionEnter(Collision collision)
-    {
-        if (collision.gameObject.name == "Disc(Clone)")
-        {
-            Destroy(collision.gameObject);
-            throwManager.PickUpDisc();
-        }
-        Debug.Log(collision.gameObject.name);
-    }
+    //private void OnCollisionEnter(Collision collision)
+    //{
+    //    if (collision.gameObject.name == "Disc(Clone)")
+    //    {
+    //        Destroy(collision.gameObject);
+    //        throwManager.PickUpDisc();
+    //    }
+    //}
 }
