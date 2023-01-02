@@ -28,6 +28,7 @@ public class PlayerMovement : MonoBehaviour
 
     [SerializeField] private bool toggleSprint;
 
+    [SerializeField] private RunManager runManager;
     [SerializeField] private ThrowManager throwManager;
 
     private float horizontalInput;
@@ -56,6 +57,8 @@ public class PlayerMovement : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        moveSpeed = walkSpeed;
+        moveState = MovementState.Walking;
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
     }
@@ -108,6 +111,11 @@ public class PlayerMovement : MonoBehaviour
 
     private void MyInput()
     {
+        if (runManager.Paused)
+        {
+            return;
+        }
+
         horizontalInput = Input.GetAxisRaw("Horizontal");
         verticalInput = Input.GetAxisRaw("Vertical");
 
@@ -129,7 +137,7 @@ public class PlayerMovement : MonoBehaviour
 
             if (Input.GetKeyDown(sprintKey))
             {
-                if (moveState == MovementState.Sprinting || !toggleSprint)
+                if (moveState == MovementState.Sprinting && toggleSprint)
                 {
                     moveSpeed = walkSpeed;
                     moveState = MovementState.Walking;
@@ -141,7 +149,7 @@ public class PlayerMovement : MonoBehaviour
                 }
             }
 
-            if (toggleSprint && rb.velocity.magnitude < crouchSpeed)
+            if (moveState == MovementState.Sprinting && rb.velocity.magnitude < crouchSpeed + 0.5f)
             {
                 moveSpeed = walkSpeed;
                 moveState = MovementState.Walking;
@@ -152,7 +160,7 @@ public class PlayerMovement : MonoBehaviour
                 moveSpeed = crouchSpeed;
                 moveState = MovementState.Crouching;
 
-                if (rb.velocity.magnitude > crouchSpeed)
+                if (rb.velocity.magnitude > crouchSpeed + 0.5f)
                 {
                     moveSpeed = sprintSpeed;
                     moveState = MovementState.Sliding;
@@ -181,14 +189,14 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        Vector3 moveForce = (orientation.forward * verticalInput + orientation.right * horizontalInput) * moveSpeed * 1000f;
+        Vector3 moveForce = (orientation.forward * verticalInput + orientation.right * horizontalInput) * moveSpeed * 6f;
         if (grounded || onWall)
         {
-            rb.AddForce(moveForce, ForceMode.Force);
+            rb.AddForce(moveForce, ForceMode.Acceleration);
         }
         else
         {
-            rb.AddForce(moveForce * airMulitiplier, ForceMode.Force);
+            rb.AddForce(moveForce * airMulitiplier, ForceMode.Acceleration);
         }
     }
 
@@ -196,7 +204,7 @@ public class PlayerMovement : MonoBehaviour
     {
         Vector3 flatVel = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
 
-        if (moveState != MovementState.Sliding && rb.velocity.magnitude > moveSpeed)
+        if (moveState != MovementState.Sliding && flatVel.magnitude > moveSpeed)
         {
             rb.velocity = rb.velocity.normalized * moveSpeed;
         }
@@ -206,7 +214,7 @@ public class PlayerMovement : MonoBehaviour
     {
         rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
 
-        rb.AddForce(transform.up * jumpForce, ForceMode.Impulse);
+        rb.AddForce(transform.up * jumpForce * rb.mass, ForceMode.Impulse);
     }
 
     private void ResetJump()

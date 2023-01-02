@@ -17,6 +17,9 @@ public class PlayerThrow : MonoBehaviour
 
     [SerializeField] private PlayerCam cam;
 
+    [SerializeField] private GameEvent throwEvent;
+
+    [SerializeField] private RunManager runManager;
     [SerializeField] private ThrowManager throwManager;
 
     // Start is called before the first frame update
@@ -55,17 +58,23 @@ public class PlayerThrow : MonoBehaviour
 
     private void MyInput()
     {
+        if (runManager.Paused)
+        {
+            return;
+        }
+
         if (Input.GetKeyDown(KeyCode.Mouse0) && throwManager.HoldingDisc)
         {
             throwManager.StartThrow();
         }
-        if (Input.GetKeyUp(KeyCode.Mouse0) && throwManager.HoldingDisc)
+        if (Input.GetKeyUp(KeyCode.Mouse0) && throwManager.HoldingDisc && throwManager.StartedThrow)
         {
             throwManager.EndThrow();
             Throw();
+            throwEvent?.Invoke();
             throwManager.BankAngle.Set(0, 0, 0);
         }
-        if (Input.GetKeyDown(KeyCode.Mouse1) && !throwManager.HoldingDisc && Physics.SphereCast(cam.transform.position, catchRadius, camOrientation.forward, out RaycastHit info, catchDist, discLayer))
+        if (Input.GetKeyDown(KeyCode.Mouse0) && !throwManager.HoldingDisc && Physics.SphereCast(cam.transform.position, catchRadius, camOrientation.forward, out RaycastHit info, catchDist, discLayer))
         {
             throwManager.PickUpDisc();
             Destroy(info.collider.gameObject);

@@ -14,6 +14,7 @@ public class DiscMovement : MonoBehaviour
     [SerializeField] private AnimationCurve liftCurve;
 
     [SerializeField] private ThrowManager throwManager;
+    [SerializeField] private RunManager runManager;
 
     private Rigidbody rb;
 
@@ -67,9 +68,7 @@ public class DiscMovement : MonoBehaviour
     {
         if ((goal.value & (1 << other.transform.gameObject.layer)) != 0)
         {
-            Destroy(gameObject);
-            throwManager.Reset();
-            SceneManager.LoadScene(0);
+            runManager.Scored();
         }
         if ((bounds.value & (1 << other.transform.gameObject.layer)) != 0)
         {
