@@ -352,7 +352,7 @@ Mesh:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: pb_Mesh45452
+  m_Name: pb_Mesh25052
   serializedVersion: 10
   m_SubMeshes:
   - serializedVersion: 2
@@ -2179,6 +2179,14 @@ PrefabInstance:
       propertyPath: cameraPosition
       value: 
       objectReference: {fileID: 1214627730}
+    - target: {fileID: 3451308519600667649, guid: 022f4fb5983ab1146971a698b7074410, type: 3}
+      propertyPath: XSens
+      value: 300
+      objectReference: {fileID: 0}
+    - target: {fileID: 3451308519600667649, guid: 022f4fb5983ab1146971a698b7074410, type: 3}
+      propertyPath: YSens
+      value: 300
+      objectReference: {fileID: 0}
     - target: {fileID: 3451308519600667649, guid: 022f4fb5983ab1146971a698b7074410, type: 3}
       propertyPath: Orientation
       value: 

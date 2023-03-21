@@ -39,6 +39,8 @@ public class PlayerMovement : MonoBehaviour
     private bool grounded;
     private bool onWall;
 
+    private Vector3 groundNormal;
+
     private bool canJump;
     private int jumpCount = 2;
 
@@ -66,7 +68,7 @@ public class PlayerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.1f, ground);
+        grounded = Physics.Raycast(transform.position, Vector3.down, out RaycastHit groundObj, playerHeight * 0.5f + 0.1f, ground);
 
         if (!grounded)
         {
@@ -76,13 +78,17 @@ public class PlayerMovement : MonoBehaviour
                 onWall = Physics.Raycast(transform.position, -orientation.transform.right, playerWidth * 0.5f + 0.1f, ground);
             }
         }
+        else
+        {
+            groundNormal = groundObj.normal;
+        }
 
         MyInput();
         SpeedControl();
 
         if (onWall && !grounded)
         {
-            rb.AddForce(transform.up * 1f, ForceMode.Acceleration);
+            rb.AddForce(transform.up * -0.1f, ForceMode.Acceleration);
         }
 
         if (grounded || onWall)
@@ -97,9 +103,12 @@ public class PlayerMovement : MonoBehaviour
             {
                 rb.drag = groundDrag;
             }
+
+            rb.useGravity = false;
         }
         else
         {
+            rb.useGravity = true;
             rb.drag = 0;
         }
     }
@@ -129,7 +138,7 @@ public class PlayerMovement : MonoBehaviour
 
         if (grounded || onWall)
         {
-            if (!toggleSprint)
+            if (!toggleSprint || moveState != MovementState.Sprinting)
             {
                 moveSpeed = walkSpeed;
                 moveState = MovementState.Walking;
@@ -190,7 +199,12 @@ public class PlayerMovement : MonoBehaviour
         }
 
         Vector3 moveForce = (orientation.forward * verticalInput + orientation.right * horizontalInput) * moveSpeed * 6f;
-        if (grounded || onWall)
+        if (grounded)
+        {
+
+            rb.AddForce(Vector3.ProjectOnPlane(moveForce, groundNormal), ForceMode.Acceleration);
+        }
+        else if (onWall)
         {
             rb.AddForce(moveForce, ForceMode.Acceleration);
         }
