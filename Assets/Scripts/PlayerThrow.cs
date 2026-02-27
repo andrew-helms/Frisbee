@@ -1,8 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public class PlayerThrow : MonoBehaviour
+public class PlayerThrow : NetworkBehaviour
 {
     [SerializeField] private GameObject projectile;
     [SerializeField] private float throwForce;
@@ -30,7 +31,10 @@ public class PlayerThrow : MonoBehaviour
 
     // Update is called once per frame
     void Update()
-    { 
+    {
+        if (!IsOwner)
+            return;
+
         MyInput();
         
         if (throwManager.AimLock)

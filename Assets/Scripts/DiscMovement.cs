@@ -1,7 +1,8 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class DiscMovement : MonoBehaviour
+public class DiscMovement : NetworkBehaviour
 {
     //[SerializeField] private float LiftCoeff;
     [SerializeField] private float cd0 = 0.01f;
@@ -22,7 +23,7 @@ public class DiscMovement : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        rb.drag = Mathf.Epsilon;
+        rb.linearDamping = Mathf.Epsilon;
     }
 
     // Update is called once per frame
@@ -33,7 +34,10 @@ public class DiscMovement : MonoBehaviour
 
     void FixedUpdate()
     {
-        Vector3 localVel = transform.InverseTransformDirection(rb.velocity);
+        if (!IsOwner)
+            return;
+
+        Vector3 localVel = transform.InverseTransformDirection(rb.linearVelocity);
         float velocity = localVel.magnitude;
 
         if (velocity < 0.01f)
@@ -61,7 +65,7 @@ public class DiscMovement : MonoBehaviour
         rb.AddForce(localNorm * -drag, ForceMode.Force);
 
         Debug.DrawRay(rb.position, transform.up * lift, Color.blue);
-        Debug.DrawRay(rb.position, rb.velocity.normalized * -drag, Color.red);
+        Debug.DrawRay(rb.position, rb.linearVelocity.normalized * -drag, Color.red);
     }
 
     private void OnTriggerEnter(Collider other)

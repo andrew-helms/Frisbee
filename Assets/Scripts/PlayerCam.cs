@@ -1,8 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public class PlayerCam : MonoBehaviour
+public class PlayerCam : NetworkBehaviour
 {
     public float XSens;
     public float YSens;
@@ -25,6 +26,9 @@ public class PlayerCam : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (!IsOwner)
+            return;
+
         if (!throwManager.AimLock && !runManager.Paused)
         {
             float mouseX = Input.GetAxisRaw("Mouse X") * Time.deltaTime * XSens;
