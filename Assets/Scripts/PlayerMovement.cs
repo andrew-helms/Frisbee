@@ -97,11 +97,11 @@ public class PlayerMovement : MonoBehaviour
 
             if ((moveState == MovementState.Sliding || onWall) && !throwManager.HoldingDisc)
             {
-                rb.drag = slideDrag;
+                rb.linearDamping = slideDrag;
             }
             else
             {
-                rb.drag = groundDrag;
+                rb.linearDamping = groundDrag;
             }
 
             rb.useGravity = false;
@@ -109,7 +109,7 @@ public class PlayerMovement : MonoBehaviour
         else
         {
             rb.useGravity = true;
-            rb.drag = 0;
+            rb.linearDamping = 0;
         }
     }
 
@@ -158,7 +158,7 @@ public class PlayerMovement : MonoBehaviour
                 }
             }
 
-            if (moveState == MovementState.Sprinting && rb.velocity.magnitude < crouchSpeed + 0.5f)
+            if (moveState == MovementState.Sprinting && rb.linearVelocity.magnitude < crouchSpeed + 0.5f)
             {
                 moveSpeed = walkSpeed;
                 moveState = MovementState.Walking;
@@ -169,7 +169,7 @@ public class PlayerMovement : MonoBehaviour
                 moveSpeed = crouchSpeed;
                 moveState = MovementState.Crouching;
 
-                if (rb.velocity.magnitude > crouchSpeed + 0.5f)
+                if (rb.linearVelocity.magnitude > crouchSpeed + 0.5f)
                 {
                     moveSpeed = sprintSpeed;
                     moveState = MovementState.Sliding;
@@ -179,7 +179,7 @@ public class PlayerMovement : MonoBehaviour
         else
         {
             //moveSpeed = SprintSpeed;
-            if (Input.GetKey(crouchKey) && rb.velocity.magnitude > crouchSpeed + 0.5f)
+            if (Input.GetKey(crouchKey) && rb.linearVelocity.magnitude > crouchSpeed + 0.5f)
             {
                 moveState = MovementState.Sliding;
             }
@@ -216,17 +216,17 @@ public class PlayerMovement : MonoBehaviour
 
     private void SpeedControl()
     {
-        Vector3 flatVel = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
+        Vector3 flatVel = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
 
         if (moveState != MovementState.Sliding && flatVel.magnitude > moveSpeed)
         {
-            rb.velocity = rb.velocity.normalized * moveSpeed;
+            rb.linearVelocity = rb.linearVelocity.normalized * moveSpeed;
         }
     }
 
     private void Jump()
     {
-        rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
+        rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
 
         rb.AddForce(transform.up * jumpForce * rb.mass, ForceMode.Impulse);
     }
